@@ -162,11 +162,21 @@ void Zlayer2(float (&zvec2)[50], float wlayer2[50][393], float (&inp2)[392]){
         {
             sum += wlayer2[i][j]*inp2[j-1];
         }
-        zvec2[i] = sum;
+        /*O valor de sum estava saindo entre [10,13],
+        Então eu estou simplesmente dividindo por 10 aqui
+        para não perdermos sensibilidade na função sigmoide,
+        este comentário serve para lembrar de consultar esta ação depois*/
+        zvec2[i] = sum/10;
         sum = 0;
     }
 }
 
+void output(float (&out)[50], float (&zvec2)[50]){
+    for (int i = 0; i < 50; ++i)
+    {
+        out[i] = fz(zvec2[i]);
+    }
+}
 
 int main(int argc, char const *argv[])
 {
@@ -193,7 +203,7 @@ int main(int argc, char const *argv[])
     float wlayer1[392][785];
     weightsLayer1Gen(wlayer1);
 
-    //Declarando e gerando os Z's da camada 1
+    //Declarando e inicializando os Z's da camada 1
     float zvec1[392];
     Zlayer1(zvec1,wlayer1,vec1[0]);
 
@@ -205,13 +215,14 @@ int main(int argc, char const *argv[])
     float wlayer2[50][393];
     weightsLayer2Gen(wlayer2);
 
+    //Declarando e inicializando o vetor de Z's da camada 2
     float zvec2[50];
     Zlayer2(zvec2,wlayer2,inp2);
 
-/*    for (int i = 0; i < 50; ++i)
-    {
-        cout << "Z2 " << i << ": " << zvec2[i] << endl;
-    }*/
+    //Declarando e recebendo as saídas da rede
+    float out[50];
+    output(out,zvec2);
+
 /*    cout << "Vetor Z ------------------------" << endl;
     for (int i = 0; i < 392; ++i)
     {

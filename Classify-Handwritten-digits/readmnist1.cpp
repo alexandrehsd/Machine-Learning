@@ -85,10 +85,12 @@ void read_Mnist_Label(vector<float> &vec)
     }
 }
 
+//Função sigmoide
 float fz(float z){
     return 1/(1 + exp(-z));
 }
 
+//Derivada da função sigmoide
 float dfz(float z){
     return fz(z)*(1 - fz(z));
 }
@@ -105,6 +107,7 @@ void weightsLayer1Gen(float (&wlayer1)[392][785]){
     }
 }
 
+//Função para calcular os Z's da primeira camada
 void Zlayer1(float (&zvec1)[392], float wlayer1[392][785], vector<float> inputs){
     
     float sum = 0;
@@ -128,6 +131,7 @@ void Zlayer1(float (&zvec1)[392], float wlayer1[392][785], vector<float> inputs)
     }
 }
 
+//Função para calcular as saídas da primeira camada (entradas da segunda)
 void inpLayer2(float (&inp2)[392], float zvec1[392]){
     for (int i = 0; i < 392; ++i)
     {
@@ -147,6 +151,7 @@ void weightsLayer2Gen(float (&wlayer2)[50][393]){
     }
 }
 
+//Função para calcular os Z's da segunda camada
 void Zlayer2(float (&zvec2)[50], float wlayer2[50][393], float (&inp2)[392]){
     
     float sum = 0;
@@ -171,6 +176,7 @@ void Zlayer2(float (&zvec2)[50], float wlayer2[50][393], float (&inp2)[392]){
     }
 }
 
+//Função para calcular as saídas da rede
 void output(float (&out)[50], float (&zvec2)[50]){
     for (int i = 0; i < 50; ++i)
     {

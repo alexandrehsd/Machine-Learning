@@ -51,7 +51,7 @@ void read_Mnist(vector< vector<float> > &vec)
                 {
                     unsigned char temp = 0;
                     file.read((char*) &temp, sizeof(temp));
-                    tp.push_back(((float)temp)/2040);//entrada normalizada
+                    tp.push_back(((float)temp)/255);//entrada normalizada
 	            }
             }
             vec.push_back(tp);
@@ -102,26 +102,19 @@ void weightsLayer1Gen(float (&wlayer1)[392][785]){
 
     for(int i=0;i<392;i++){
         for(int j=0;j<785;j++){
-            wlayer1[i][j] = ((float) rand() / (RAND_MAX))/10;//peso normalizado
+            wlayer1[i][j] = ((float) rand() / (RAND_MAX));//peso normalizado
         }
     }
 }
 
 //Função para calcular os Z's da primeira camada
-void Zlayer1(float (&zvec1)[392], float wlayer1[392][785], vector<float> inputs){
+void Zlayer1(float (&zvec1)[392], float (&wlayer1)[392][785], vector<float> inputs){
     
     float sum = 0;
     int v = 392; //Número de neurônios da camada oculta 1
     for (int i = 0; i < v; i++)
     {
         sum += wlayer1[i][0]*(-1); //bias
-        /*Há 785 (784 entradas + bias) pesos para cada neuronio,
-        porém, há apenas 784 entradas. De modo que,
-        desconsiderando o bias, o primeiro peso está na posição
-        w[i][1], mas o primeiro input na posição inputs[0].
-        Assim, a influencia do bias é calculada antes 
-        e a partir daqui é calculado o produto dos pesos
-        pelas entradas -> w[0][1 -> peso1]*input[0]...*/
         for (int j = 1; j < 785; j++)
         {
             sum += wlayer1[i][j]*inputs[j-1];
@@ -132,7 +125,7 @@ void Zlayer1(float (&zvec1)[392], float wlayer1[392][785], vector<float> inputs)
 }
 
 //Função para calcular as saídas da primeira camada (entradas da segunda)
-void inpLayer2(float (&inp2)[392], float zvec1[392]){
+void inpLayer2(float (&inp2)[392], float (&zvec1)[392]){
     for (int i = 0; i < 392; ++i)
     {
         inp2[i] = fz(zvec1[i]);
@@ -146,23 +139,19 @@ void weightsLayer2Gen(float (&wlayer2)[50][393]){
 
     for(int i=0;i<50;i++){
         for(int j=0;j<393;j++){
-            wlayer2[i][j] = ((float) rand() / (RAND_MAX))/10;//peso normalizado
+            wlayer2[i][j] = ((float) rand() / (RAND_MAX));//peso normalizado
         }
     }
 }
 
 //Função para calcular os Z's da segunda camada
-void Zlayer2(float (&zvec2)[50], float wlayer2[50][393], float (&inp2)[392]){
+void Zlayer2(float (&zvec2)[50], float (&wlayer2)[50][393], float (&inp2)[392]){
     
     float sum = 0;
     int m = 50; //Número de neurônios da camada oculta 2
     for (int i = 0; i < m; i++)
     {
         sum += wlayer2[i][0]*(-1); //bias
-        /*Há 393 (392 entradas + bias) pesos para cada neuronio,
-        porém, há apenas 392 entradas. Assim, o bias é calculado
-        antes e a partir daqui é calculado o produto dos pesos
-        pelas entradas -> w[0][1 -> peso1]*input[0]...*/
         for (int j = 1; j < 393; j++)
         {
             sum += wlayer2[i][j]*inp2[j-1];
@@ -170,8 +159,9 @@ void Zlayer2(float (&zvec2)[50], float wlayer2[50][393], float (&inp2)[392]){
         /*O valor de sum estava saindo entre [10,13],
         Então eu estou simplesmente dividindo por 10 aqui
         para não perdermos sensibilidade na função sigmoide,
-        este comentário serve para lembrar de consultar esta ação depois*/
-        zvec2[i] = sum/10;
+        este comentário serve para lembrar de consultar esta ação depois
+        zvec2[i] = sum/10;*/
+        zvec2[i] = sum;
         sum = 0;
     }
 }
@@ -241,8 +231,8 @@ int main(int argc, char const *argv[])
         cout << "inp2 " << i << ": " << inp2[i] << endl;
     }*/
 
-
-/*    cout << "Vetor de inputs -----------------" << endl;
+/*
+    cout << "Vetor de inputs -----------------" << endl;
 
     for (int i = 0; i < 784; ++i)
     {

@@ -128,10 +128,10 @@ void Zlayer1(float (&zvec1)[NL1], float (&wlayer1)[NL1][785], vector<float> inpu
 }
 
 //Função para calcular as saídas da primeira camada (entradas da segunda)
-void inpLayer2(float (&inp2)[NL1], float (&zvec1)[NL1]){
+void inpLayer2(float (&inp2)[NoI][NL1], float (&zvec1)[NL1], int count){
     for (int i = 0; i < NL1; ++i)
     {
-        inp2[i] = fz(zvec1[i]);
+        inp2[count][i] = fz(zvec1[i]);
     }
 }
 
@@ -148,7 +148,7 @@ void weightsLayer2Gen(float (&wlayer2)[NL2][NL1 + 1]){
 }
 
 //Função para calcular os Z's da segunda camada
-void Zlayer2(float (&zvec2)[NL2], float (&wlayer2)[NL2][NL1+1], float (&inp2)[NL1]){
+void Zlayer2(float (&zvec2)[NL2], float (&wlayer2)[NL2][NL1+1], float (&inp2)[count][NL1], int count){
     
     float sum = 0;
 
@@ -157,7 +157,7 @@ void Zlayer2(float (&zvec2)[NL2], float (&wlayer2)[NL2][NL1+1], float (&inp2)[NL
         sum += wlayer2[i][0]*(-1); //bias
         for (int j = 1; j < NL1+1; j++)
         {
-            sum += wlayer2[i][j]*inp2[j-1];
+            sum += wlayer2[i][j]*inp2[count][j-1];
         }
         /*O valor de sum estava saindo entre [10,13],
         Então eu estou simplesmente dividindo por 10 aqui
@@ -177,46 +177,10 @@ void output(float (&out)[NL2], float (&zvec2)[NL2]){
     }
 }
 
-void expectedOutput(float (&expvec)[NL2],int label){
-    switch(label){
-        case 0:
-            expvec[0] = 1;
-            break;
-        case 1:
-            expvec[1] = 1;
-            break;
-        case 2:
-            expvec[2] = 1;
-            break;
-        case 3:
-            expvec[3] = 1;
-            break;
-        case 4:
-            expvec[4] = 1;
-            break;
-        case 5:
-            expvec[5] = 1;
-            break;
-        case 6:
-            expvec[6] = 1;
-            break;
-        case 7:
-            expvec[7] = 1;
-            break;
-        case 8:
-            expvec[8] = 1;
-            break;
-        case 9:
-            expvec[9] = 1;
-            break;
-        default: cout << "Label inválido";
-    }
-}
-
 //Função para atualizar a matriz de erros
 void errUpdate(float (&errvec)[NoI][NL2], float (&out)[NL2], float (&labels)[NoI], int count){
     float expvec[NL2] = {0,0,0,0,0,0,0,0,0,0};
-    expectedOutput(expvec,(int)labels[count]); //Definindo qual a saída esperada
+    expvec[labels[count]] = 1; //Definindo qual a saída esperada
     for (int i = 0; i < NL2; ++i)
     {
         errvec[count][i] = expvec[i] - out[i]; //definindo qual o vetor de erros para a imagem "count"
@@ -232,37 +196,63 @@ void deltaL2(float (&gradL2)[NoI][NL2], float (&out)[NL2], float (&errvec)[NoI][
 }
 
 //Função para atualizar os valores do gradiente da camada 2
-void deltaL1(float (&gradL1)[NoI][NL1], float (&inp2)[NL1], float (&wlayer2)[NL2][NL1+1], 
+void deltaL1(float (&gradL1)[NoI][NL1], float (&inp2)[NoI][NL1], float (&wlayer2)[NL2][NL1+1], 
     float (&gradL2)[NoI][NL2], int count){
-    float sum = 0;
+    
     for (int i = 0; i < NL1; ++i)
     {
+        float sum = 0;
         for (int j = 0; j < NL2; ++j)
         {
             sum += gradL2[count][j]*wlayer2[j][i];
         }
-        gradL1[count][i] = inp2[i]*(1 - inp2[i])*sum;
-        sum = 0;
+        gradL1[count][i] = inp2[count][i]*(1 - inp2[count][i])*sum;
     }
 }
 
+// wlayer2 [10][393]
 //Função para atualizar os pesos da camada 2
-void weightsLayer2Updt(float (&wlayer2)[NL2][NL1+1], float (&gradL2)[NoI][NL2], float (&inp2)[NL1]){
-/*    float sum = 0;
+void weightsLayer2Updt(float (&wlayer2)[NL2][NL1+1], float (&gradL2)[NoI][NL2], float (&inp2)[count][NL1]){
     for (int i = 0; i < NL2; ++i)
     {
-        
-    }*/
+        for (int k = 0; k < NL1+1; ++k)
+        {
+            float sum = 0;
+            for (int j = 0; j < NoI; ++j)
+            {
+                sum += gradL2[j][i]*inp2[j][k];   
+            }
+            wlayer2[i][k] = wlayer2[i][k] + sum;
+        }
+    }
 }
+
+//Função para atualizar os pesos da camada 1
+void weightsLayer1Updt(float (&wlayer1)[NL1][785], float (&gradL1)[NoI][NL1], vector< vector<float> > &images){
+    for (int i = 0; i < NL1; ++i)
+    {
+        for (int k = 0; k < 785; ++k)
+        {
+            float sum = 0;
+            for (int j = 0; j < NoI; ++j)
+            {
+                sum += gradL2[j][i]*inp2[j][k];   
+            }
+            wlayer2[i][k] = wlayer2[i][k] + sum;
+        }
+    }
+}
+
 
 int main(int argc, char const *argv[])
 {
+    float eta = 0.5; // passo de aprendizado
 
 	int number_of_images = NoI;
 	int image_size = 28 * 28;
 
     //read MNIST image into float vector
-    vector<vector<float> > images;
+    vector<vector<float> > images; //input of the Layer 1
 
     read_Mnist(images);
 
@@ -287,7 +277,7 @@ int main(int argc, char const *argv[])
     Zlayer1(zvec1,wlayer1,images[0]);
 
     //Declarando e gerando os inputs da camada 2
-    float inp2[NL1];
+    float inp2[NoI][NL1];
     inpLayer2(inp2,zvec1);
 
     //Declarando e inicializando os pesos da camada 2

@@ -1,6 +1,7 @@
 // referência http://eric-yuan.me/cpp-read-mnist/
 // remark 01: na criação de ifstream file(...) não passe o nome do arquivo por uma variável string
 // remark 02: coloquei o arquivo do mnist na mesma pasta do código, por isso não escrevo o caminho, só deu certo assim
+// Link para a normalização dos pesos http://www.iro.umontreal.ca/~bengioy/ift6266/H12/html/mlp_en.html
 
 #include<math.h>
 #include<iostream>
@@ -8,12 +9,15 @@
 #include<fstream>
 #include <stdlib.h>     /* srand, rand */
 #include <time.h>
-
+// 450 -> 0.0697
 #define NL1 392 //Number of neurons from the first hidden layer
 #define NL2 10 //Number of neurons from the second hidden layer (also, length of the output vector)
-#define NoI 20000 //Number of images used to train the algorithm
-#define eta 0.6 //passo de aprendizagem
+#define NoI 50000 //Number of images used to train the algorithm
+#define eta 0.2 //passo de aprendizagem
 using namespace std;
+//eta == 0.2 -> 75.3%
+//eta == 0.18 -> 66.2%
+//eta == 0.22 -> 63.2%
 
 int ReverseInt (int i)
 {
@@ -84,7 +88,7 @@ void read_Mnist_sample(vector< vector<float> > &images)
         //Para ler todas as imagens, executar:
         // for(int i = 0; i < number_of_images; ++i)
 
-        for(int i = 0; i < 10; ++i)
+        for(int i = 0; i < 1000; ++i)
         {
             vector<float> tp;
             for(int r = 0; r < n_rows; ++r)
@@ -144,7 +148,7 @@ void read_Mnist_Label_sample(vector<float> &labels)
 
         // Para ler todas as imagens, executar:
         // for(int i = 0; i < number_of_images; ++i)
-        for(int i = 0; i < 10; ++i)
+        for(int i = 0; i < 1000; ++i)
         {
             unsigned char temp = 0;
             file.read((char*) &temp, sizeof(temp));
@@ -167,7 +171,7 @@ float dfz(float z){
 void weightsLayer1Gen(float (&wlayer1)[NL1][785]){
     for(int i=0;i<NL1;i++){
         for(int j=0;j<785;j++){
-            wlayer1[i][j] = ((float) rand() / (RAND_MAX))/10;//peso normalizado
+            wlayer1[i][j] = (((float) rand() / (RAND_MAX))/7) - 0.0714;//peso normalizado [-0.0714,0.0714]
         }
     }
 }
@@ -199,7 +203,7 @@ void inpLayer2(float (&inp2)[NL1], float (&zvec1)[NL1]){
 void weightsLayer2Gen(float (&wlayer2)[NL2][NL1 + 1]){
     for(int i=0;i<NL2;i++){
         for(int j=0;j<NL1+1;j++){
-            wlayer2[i][j] = ((float) rand() / (RAND_MAX))/10;//peso normalizado
+            wlayer2[i][j] = ((float) rand() / (RAND_MAX))/33.557 - 0.0149;//peso normalizado [-0.0149,0.0149]
         }
     }
 }
@@ -282,7 +286,7 @@ void weightsLayer1Updt(float (&wlayer1)[NL1][785], float (&gradL1)[NL1], vector<
     }
 }
 
-void NetOut(vector<float> sample, float (&wlayer1)[NL1][785], float (&wlayer2)[NL2][NL1+1]){
+int NetOut(vector<float> sample, float (&wlayer1)[NL1][785], float (&wlayer2)[NL2][NL1+1]){
     float zvector1[NL1];
     
     for (int i = 0; i < NL1; i++)
@@ -327,14 +331,7 @@ void NetOut(vector<float> sample, float (&wlayer1)[NL1][785], float (&wlayer2)[N
             index = i;
         }
     }
-
-    cout << "Vetor de saída = ";
-    for (int i = 0; i < 10; ++i)
-    {
-        cout << Netoutput[i] << " ";
-    }
-    cout << endl;
-    cout << "Saída da rede = " << index << endl;
+    return index;
 }
 
 int main(int argc, char const *argv[])
@@ -357,7 +354,7 @@ int main(int argc, char const *argv[])
     vector<vector<float> > samples;
     read_Mnist_sample(samples);
 
-    vector<float> lsamples(10);
+    vector<float> lsamples(1000);
     read_Mnist_Label_sample(lsamples);
 
     //Declarando e inicializando a matriz de pesos da camada 1
@@ -413,6 +410,24 @@ int main(int argc, char const *argv[])
         weightsLayer1Updt(wlayer1,gradL1,images[count]);
         if (count % 5000 == 0)
         {
+
+            cout << "vetor de saidas: ";
+            for (int i = 0; i < NL2; ++i)
+            {
+                cout << out[i] << " ";
+            }
+            cout << endl;
+
+            float expvec[NL2] = {0,0,0,0,0,0,0,0,0,0};
+            expvec[(int)labels[count]] = 1; //Definindo qual a saída esperada
+
+            cout << "Saída esperada: ";
+            for (int i = 0; i < NL2; ++i)
+            {
+                cout << expvec[i] << " ";
+            }
+            cout << endl;
+
             float sum = 0;
             cout << "vetor de erros: ";
             for (int i = 0; i < NL2; ++i)
@@ -421,28 +436,36 @@ int main(int argc, char const *argv[])
             }
             cout << endl;
 
-            cout << "vetor de Z's da camada 2: ";
+            cout << "Z's da camada 2: ";
             for (int i = 0; i < NL2; ++i)
             {
                 cout << zvec2[i] << " ";
             }
             cout << endl;
+
+            cout << "Z's da camada 1: ";
+            for (int i = 0; i < NL2; ++i)
+            {
+                cout << zvec1[i] << " ";
+            }
+            cout << endl;
+
+            cout << "Label = " << labels[count] << endl;
         }
     }
 
-    cout <<"Último label = " << labels[NoI-1] << endl;
-    cout <<"Última saída = ";
-    for (int i = 0; i < 10; ++i)
-    {
-         cout << out[i] << " ";
-    }
-    cout << endl;
-
-    for (int i = 0; i < 10; ++i)
+    int hits = 0;
+    for (int i = 0; i < 1000; ++i)
     {
         cout << "Label de entrada = " << lsamples[i] << endl;
-        NetOut(samples[i], wlayer1, wlayer2);
+        int saida = NetOut(samples[i], wlayer1, wlayer2);
+        cout << "Label de Saída   = " << saida << endl;
+        if (lsamples[i] == NetOut(samples[i], wlayer1, wlayer2))
+        {
+            hits++;
+        }
     }
+    cout << "Taxa de acerto = " << (hits/1000.0)*100 << endl;
 
     return 0;
 }

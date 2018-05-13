@@ -10,9 +10,9 @@
 #include <stdlib.h>     /* srand, rand */
 #include <time.h>
 // 450 -> 0.0697
-#define NL1 392 //Number of neurons from the first hidden layer
+#define NL1 450 //Number of neurons from the first hidden layer
 #define NL2 10 //Number of neurons from the second hidden layer (also, length of the output vector)
-#define NoI 50000 //Number of images used to train the algorithm
+#define NoI 40000 //Number of images used to train the algorithm
 #define eta 0.2 //passo de aprendizagem
 using namespace std;
 //eta == 0.2 -> 75.3%
@@ -105,7 +105,7 @@ void read_Mnist_sample(vector< vector<float> > &images)
     }
 }
 
-void read_Mnist_Label_train(vector<float> &labels)
+void read_Mnist_Label_train(vector<int> &labels)
 {
     ifstream file ("train-labels.idx1-ubyte", ios::binary);
 
@@ -126,12 +126,12 @@ void read_Mnist_Label_train(vector<float> &labels)
         {
             unsigned char temp = 0;
             file.read((char*) &temp, sizeof(temp));
-            labels[i] = (float)temp;
+            labels[i] = (int)temp;
         }
     }
 }
 
-void read_Mnist_Label_sample(vector<float> &labels)
+void read_Mnist_Label_sample(vector<int> &labels)
 {
     ifstream file ("t10k-labels.idx1-ubyte", ios::binary);
 
@@ -152,32 +152,32 @@ void read_Mnist_Label_sample(vector<float> &labels)
         {
             unsigned char temp = 0;
             file.read((char*) &temp, sizeof(temp));
-            labels[i] = (float)temp;
+            labels[i] = (int)temp;
         }
     }
 }
 
 //Função sigmoide
-float fz(float z){
+double fz(double z){
     return 1/(1 + exp(-z));
 }
 
 //Derivada da função sigmoide
-float dfz(float z){
+double dfz(double z){
     return fz(z)*(1 - fz(z));
 }
 
 //Função para gerar os pesos da primeira camada aleatoriamente 
-void weightsLayer1Gen(float (&wlayer1)[NL1][785]){
+void weightsLayer1Gen(double (&wlayer1)[NL1][785]){
     for(int i=0;i<NL1;i++){
         for(int j=0;j<785;j++){
-            wlayer1[i][j] = (((float) rand() / (RAND_MAX))/7) - 0.0714;//peso normalizado [-0.0714,0.0714]
+            wlayer1[i][j] = (((double) rand() / (RAND_MAX))/7.364) - 0.0679;//peso normalizado [-0.0714,0.0714]
         }
     }
 }
 
 //Função para calcular os Z's da primeira camada
-void Zlayer1(float (&zvec1)[NL1], float (&wlayer1)[NL1][785], vector<float> inputs){
+void Zlayer1(double (&zvec1)[NL1], double (&wlayer1)[NL1][785], vector<float> inputs){
     float sum = 0;
     for (int i = 0; i < NL1; i++)
     {
@@ -192,7 +192,7 @@ void Zlayer1(float (&zvec1)[NL1], float (&wlayer1)[NL1][785], vector<float> inpu
 }
 
 //Função para calcular as saídas da primeira camada (entradas da segunda)
-void inpLayer2(float (&inp2)[NL1], float (&zvec1)[NL1]){
+void inpLayer2(double (&inp2)[NL1], double (&zvec1)[NL1]){
     for (int i = 0; i < NL1; ++i)
     {
         inp2[i] = fz(zvec1[i]);
@@ -200,16 +200,16 @@ void inpLayer2(float (&inp2)[NL1], float (&zvec1)[NL1]){
 }
 
 //Função para gerar os pesos da segunda camada aleatoriamente 
-void weightsLayer2Gen(float (&wlayer2)[NL2][NL1 + 1]){
+void weightsLayer2Gen(double (&wlayer2)[NL2][NL1 + 1]){
     for(int i=0;i<NL2;i++){
         for(int j=0;j<NL1+1;j++){
-            wlayer2[i][j] = ((float) rand() / (RAND_MAX))/33.557 - 0.0149;//peso normalizado [-0.0149,0.0149]
+            wlayer2[i][j] = (((double) rand() / (RAND_MAX))/4.378) - 0.1142;//peso normalizado [-0.0149,0.0149] /33.557 - 0.0149;
         }
     }
 }
 
 //Função para calcular os Z's da segunda camada
-void Zlayer2(float (&zvec2)[NL2], float (&wlayer2)[NL2][NL1+1], float (&inp2)[NL1]){
+void Zlayer2(double (&zvec2)[NL2], double (&wlayer2)[NL2][NL1+1], double (&inp2)[NL1]){
     for (int i = 0; i < NL2; i++)
     {
         float sum = 0;
@@ -223,7 +223,7 @@ void Zlayer2(float (&zvec2)[NL2], float (&wlayer2)[NL2][NL1+1], float (&inp2)[NL
 }
 
 //Função para calcular as saídas da rede
-void output(float (&out)[NL2], float (&zvec2)[NL2]){
+void output(double (&out)[NL2], double (&zvec2)[NL2]){
     for (int i = 0; i < NL2; ++i)
     {
         out[i] = fz(zvec2[i]);
@@ -231,9 +231,9 @@ void output(float (&out)[NL2], float (&zvec2)[NL2]){
 }
 
 //Função para atualizar a matriz de erros
-void errUpdate(float (&errvec)[NL2], float (&out)[NL2], vector<float> &labels, int count){
+void errUpdate(double (&errvec)[NL2], double (&out)[NL2], vector<int> &labels, int count){
     float expvec[NL2] = {0,0,0,0,0,0,0,0,0,0};
-    expvec[(int)labels[count]] = 1; //Definindo qual a saída esperada
+    expvec[labels[count]] = 1; //Definindo qual a saída esperada
     for (int i = 0; i < NL2; ++i)
     {
         errvec[i] = expvec[i]-out[i]; //definindo qual o vetor de erros para a imagem "count"
@@ -241,7 +241,7 @@ void errUpdate(float (&errvec)[NL2], float (&out)[NL2], vector<float> &labels, i
 }
 
 //Função para atualizar os valores do gradiente da camada 2
-void deltaL2(float (&gradL2)[NL2], float (&out)[NL2], float (&errvec)[NL2]){
+void deltaL2(double (&gradL2)[NL2], double (&out)[NL2], double (&errvec)[NL2]){
     for (int i = 0; i < NL2; ++i)
     {
         gradL2[i] = out[i]*(1 - out[i])*errvec[i]; 
@@ -249,8 +249,8 @@ void deltaL2(float (&gradL2)[NL2], float (&out)[NL2], float (&errvec)[NL2]){
 }
 
 //Função para atualizar os valores do gradiente da camada 2
-void deltaL1(float (&gradL1)[NL1], float (&inp2)[NL1], float (&wlayer2)[NL2][NL1+1], 
-    float (&gradL2)[NL2]){
+void deltaL1(double (&gradL1)[NL1], double (&inp2)[NL1], double (&wlayer2)[NL2][NL1+1], 
+    double (&gradL2)[NL2]){
     
     for (int i = 0; i < NL1; ++i)
     {
@@ -265,7 +265,7 @@ void deltaL1(float (&gradL1)[NL1], float (&inp2)[NL1], float (&wlayer2)[NL2][NL1
 
 // wlayer2 [10][393]
 //Função para atualizar os pesos da camada 2
-void weightsLayer2Updt(float (&wlayer2)[NL2][NL1+1], float (&gradL2)[NL2], float (&inp2)[NL1]){
+void weightsLayer2Updt(double (&wlayer2)[NL2][NL1+1], double (&gradL2)[NL2], double (&inp2)[NL1]){
     for (int i = 0; i < NL2; ++i)
     {
         for (int j = 0; j < NL1+1; ++j)
@@ -276,7 +276,7 @@ void weightsLayer2Updt(float (&wlayer2)[NL2][NL1+1], float (&gradL2)[NL2], float
 }
 
 //Função para atualizar os pesos da camada 1
-void weightsLayer1Updt(float (&wlayer1)[NL1][785], float (&gradL1)[NL1], vector<float> &images){
+void weightsLayer1Updt(double (&wlayer1)[NL1][785], double (&gradL1)[NL1], vector<float> &images){
     for (int i = 0; i < NL1; ++i)
     {
         for (int j = 0; j < 785; ++j)
@@ -286,12 +286,12 @@ void weightsLayer1Updt(float (&wlayer1)[NL1][785], float (&gradL1)[NL1], vector<
     }
 }
 
-int NetOut(vector<float> sample, float (&wlayer1)[NL1][785], float (&wlayer2)[NL2][NL1+1]){
-    float zvector1[NL1];
+int NetOut(vector<float> sample, double (&wlayer1)[NL1][785], double (&wlayer2)[NL2][NL1+1]){
+    double zvector1[NL1];
     
     for (int i = 0; i < NL1; i++)
     {
-        float sum = 0;
+        double sum = 0;
         sum += wlayer1[i][0]*(-1); //bias
         for (int j = 1; j < 785; j++)
         {
@@ -300,16 +300,16 @@ int NetOut(vector<float> sample, float (&wlayer1)[NL1][785], float (&wlayer2)[NL
         zvector1[i] = sum;
     }
 
-    float inputLayer2[NL1];
+    double inputLayer2[NL1];
     for (int i = 0; i < NL1; ++i)
     {
         inputLayer2[i] = fz(zvector1[i]); 
     }
 
-    float zvector2[NL2];
+    double zvector2[NL2];
     for (int i = 0; i < NL2; i++)
     {
-        float sum = 0;
+        double sum = 0;
         sum += wlayer2[i][0]*(-1); //bias
         for (int j = 1; j < NL1+1; j++)
         {
@@ -318,9 +318,9 @@ int NetOut(vector<float> sample, float (&wlayer1)[NL1][785], float (&wlayer2)[NL
         zvector2[i] = sum;
     }
 
-    float Netoutput[NL2];
-    float greater = 0;
-    float index;
+    double Netoutput[NL2];
+    double greater = 0;
+    int index;
     for (int i = 0; i < NL2; ++i)
     {
         Netoutput[i] = fz(zvector2[i]);
@@ -347,112 +347,116 @@ int main(int argc, char const *argv[])
     cout<<images[0].size()<<endl;
 
     //read MNIST label into float vector
-    vector<float> labels(NoI);
+    vector<int> labels(NoI);
     read_Mnist_Label_train(labels);
     cout<<labels.size()<<endl;
 
     vector<vector<float> > samples;
     read_Mnist_sample(samples);
 
-    vector<float> lsamples(1000);
+    vector<int> lsamples(1000);
     read_Mnist_Label_sample(lsamples);
 
     //Declarando e inicializando a matriz de pesos da camada 1
-    float wlayer1[NL1][785];
+    double wlayer1[NL1][785];
     weightsLayer1Gen(wlayer1);
 
     //Declarando e inicializando os pesos da camada 2
-    float wlayer2[NL2][NL1+1];
+    double wlayer2[NL2][NL1+1];
     weightsLayer2Gen(wlayer2);
 
     //Declarando os Z's da camada 1 e 2
-    float zvec1[NL1];
-    float zvec2[NL2];
+    double zvec1[NL1];
+    double zvec2[NL2];
 
     //Declarando o vetor de entradas e saídas da camada 2
-    float inp2[NL1];
-    float out[NL2];
+    double inp2[NL1];
+    double out[NL2];
 
     //Declarando as matrizes dos gradientes
-    float gradL2[NL2];
-    float gradL1[NL1];
+    double gradL2[NL2];
+    double gradL1[NL1];
 
     //Declarando a matriz de erros
-    float errvec[NL2];
-
-    for (int count = 0; count < NoI; ++count)
+    double errvec[NL2];
+    for (int epoch = 0; epoch < 6; ++epoch)
     {
-        //inicializando os Z's da camada 1
-        Zlayer1(zvec1,wlayer1,images[count]);
-
-        //gerando os inputs da camada 2
-        inpLayer2(inp2,zvec1);
-
-        //inicializando o vetor de Z's da camada 2
-        Zlayer2(zvec2,wlayer2,inp2);
-
-        //Recebendo as saídas da rede
-        output(out,zvec2);
-
-        //Atualizando o vetor de erro da imagem[count]
-        errUpdate(errvec, out, labels, count);
-
-        //Atualizando o vetor de gradientes da layer 2
-        deltaL2(gradL2, out, errvec);
-
-        //Atualizando os pesos da camada 2
-        weightsLayer2Updt(wlayer2,gradL2,inp2);
-
-        //Atualizando o vetor de gradientes da layer 2
-        deltaL1(gradL1, inp2, wlayer2, gradL2);
-
-        //Atualizando os pesos da camada 1
-        weightsLayer1Updt(wlayer1,gradL1,images[count]);
-        if (count % 5000 == 0)
+        for (int count = 0; count < NoI; ++count)
         {
+            //inicializando os Z's da camada 1
+            Zlayer1(zvec1,wlayer1,images[count]);
 
-            cout << "vetor de saidas: ";
-            for (int i = 0; i < NL2; ++i)
+            //gerando os inputs da camada 2
+            inpLayer2(inp2,zvec1);
+
+            //inicializando o vetor de Z's da camada 2
+            Zlayer2(zvec2,wlayer2,inp2);
+
+            //Recebendo as saídas da rede
+            output(out,zvec2);
+
+            //Atualizando o vetor de erro da imagem[count]
+            errUpdate(errvec, out, labels, count);
+
+            //Atualizando o vetor de gradientes da layer 2
+            deltaL2(gradL2, out, errvec);
+
+            //Atualizando os pesos da camada 2
+            weightsLayer2Updt(wlayer2,gradL2,inp2);
+
+            //Atualizando o vetor de gradientes da layer 2
+            deltaL1(gradL1, inp2, wlayer2, gradL2);
+
+            //Atualizando os pesos da camada 1
+            weightsLayer1Updt(wlayer1,gradL1,images[count]);
+            if (count % 10000 == 0)
             {
-                cout << out[i] << " ";
+
+                cout << "vetor de saidas: ";
+                for (int i = 0; i < NL2; ++i)
+                {
+                    cout << out[i] << " ";
+                }
+                cout << endl;
+
+                float expvec[NL2] = {0,0,0,0,0,0,0,0,0,0};
+                expvec[(int)labels[count]] = 1; //Definindo qual a saída esperada
+
+                cout << "Saída esperada: ";
+                for (int i = 0; i < NL2; ++i)
+                {
+                    cout << expvec[i] << " ";
+                }
+                cout << endl;
+
+                float sum = 0;
+                cout << "vetor de erros: ";
+                for (int i = 0; i < NL2; ++i)
+                {
+                    cout << errvec[i] << " ";
+                }
+                cout << endl;
+
+                cout << "Z's da camada 2: ";
+                for (int i = 0; i < NL2; ++i)
+                {
+                    cout << zvec2[i] << " ";
+                }
+                cout << endl;
+
+                cout << "Z's da camada 1: ";
+                for (int i = 0; i < NL2; ++i)
+                {
+                    cout << zvec1[i] << " ";
+                }
+                cout << endl;
+
+                cout << "Label = " << labels[count] << endl;
             }
-            cout << endl;
-
-            float expvec[NL2] = {0,0,0,0,0,0,0,0,0,0};
-            expvec[(int)labels[count]] = 1; //Definindo qual a saída esperada
-
-            cout << "Saída esperada: ";
-            for (int i = 0; i < NL2; ++i)
-            {
-                cout << expvec[i] << " ";
-            }
-            cout << endl;
-
-            float sum = 0;
-            cout << "vetor de erros: ";
-            for (int i = 0; i < NL2; ++i)
-            {
-                cout << errvec[i] << " ";
-            }
-            cout << endl;
-
-            cout << "Z's da camada 2: ";
-            for (int i = 0; i < NL2; ++i)
-            {
-                cout << zvec2[i] << " ";
-            }
-            cout << endl;
-
-            cout << "Z's da camada 1: ";
-            for (int i = 0; i < NL2; ++i)
-            {
-                cout << zvec1[i] << " ";
-            }
-            cout << endl;
-
-            cout << "Label = " << labels[count] << endl;
         }
+        cout << "ÉPOCA " << epoch << " DO TREINAMENTO!" << endl << endl;
     }
+    
 
     int hits = 0;
     for (int i = 0; i < 1000; ++i)

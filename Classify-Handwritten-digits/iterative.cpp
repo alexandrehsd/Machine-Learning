@@ -9,15 +9,12 @@
 #include<fstream>
 #include <stdlib.h>     /* srand, rand */
 #include <time.h>
-// 450 -> 0.0697
-#define NL1 450 //Number of neurons from the first hidden layer
-#define NL2 10 //Number of neurons from the second hidden layer (also, length of the output vector)
+
+#define NL1 450 //Number of neurons of the first hidden layer
+#define NL2 10 //Number of neurons of the second hidden layer (also, length of the output vector)
 #define NoI 40000 //Number of images used to train the algorithm
 #define eta 0.2 //passo de aprendizagem
 using namespace std;
-//eta == 0.2 -> 75.3%
-//eta == 0.18 -> 66.2%
-//eta == 0.22 -> 63.2%
 
 int ReverseInt (int i)
 {
@@ -88,7 +85,7 @@ void read_Mnist_sample(vector< vector<float> > &images)
         //Para ler todas as imagens, executar:
         // for(int i = 0; i < number_of_images; ++i)
 
-        for(int i = 0; i < 1000; ++i)
+        for(int i = 0; i < 5000; ++i)
         {
             vector<float> tp;
             for(int r = 0; r < n_rows; ++r)
@@ -148,7 +145,7 @@ void read_Mnist_Label_sample(vector<int> &labels)
 
         // Para ler todas as imagens, executar:
         // for(int i = 0; i < number_of_images; ++i)
-        for(int i = 0; i < 1000; ++i)
+        for(int i = 0; i < 5000; ++i)
         {
             unsigned char temp = 0;
             file.read((char*) &temp, sizeof(temp));
@@ -171,7 +168,7 @@ double dfz(double z){
 void weightsLayer1Gen(double (&wlayer1)[NL1][785]){
     for(int i=0;i<NL1;i++){
         for(int j=0;j<785;j++){
-            wlayer1[i][j] = (((double) rand() / (RAND_MAX))/7.364) - 0.0679;//peso normalizado [-0.0714,0.0714]
+            wlayer1[i][j] = (((double) rand() / (RAND_MAX))/7.364) - 0.0679;//peso normalizado [-0.0679,0.0679]
         }
     }
 }
@@ -203,7 +200,7 @@ void inpLayer2(double (&inp2)[NL1], double (&zvec1)[NL1]){
 void weightsLayer2Gen(double (&wlayer2)[NL2][NL1 + 1]){
     for(int i=0;i<NL2;i++){
         for(int j=0;j<NL1+1;j++){
-            wlayer2[i][j] = (((double) rand() / (RAND_MAX))/4.378) - 0.1142;//peso normalizado [-0.0149,0.0149] /33.557 - 0.0149;
+            wlayer2[i][j] = (((double) rand() / (RAND_MAX))/4.378) - 0.1142;//peso normalizado [-0.1142,0.1142]
         }
     }
 }
@@ -354,7 +351,7 @@ int main(int argc, char const *argv[])
     vector<vector<float> > samples;
     read_Mnist_sample(samples);
 
-    vector<int> lsamples(1000);
+    vector<int> lsamples(5000);
     read_Mnist_Label_sample(lsamples);
 
     //Declarando e inicializando a matriz de pesos da camada 1
@@ -379,7 +376,8 @@ int main(int argc, char const *argv[])
 
     //Declarando a matriz de erros
     double errvec[NL2];
-    for (int epoch = 0; epoch < 6; ++epoch)
+
+    for (int epoch = 0; epoch < 7; ++epoch)
     {
         for (int count = 0; count < NoI; ++count)
         {
@@ -454,22 +452,33 @@ int main(int argc, char const *argv[])
                 cout << "Label = " << labels[count] << endl;
             }
         }
-        cout << "ÉPOCA " << epoch << " DO TREINAMENTO!" << endl << endl;
+        cout << endl;
+        cout << "A ÉPOCA " << (epoch+1) << " DO TREINAMENTO ESTÁ COMPLETA!" << endl << endl;
     }
     
 
     int hits = 0;
-    for (int i = 0; i < 1000; ++i)
+    int vetHits[10] = {};
+    int qtds[10] = {};
+    float taxaAcerto[10];
+    for (int i = 0; i < 5000; ++i)
     {
-        cout << "Label de entrada = " << lsamples[i] << endl;
+
+        // cout << "Label de entrada = " << lsamples[i] << endl;
         int saida = NetOut(samples[i], wlayer1, wlayer2);
-        cout << "Label de Saída   = " << saida << endl;
-        if (lsamples[i] == NetOut(samples[i], wlayer1, wlayer2))
+        // cout << "Label de Saída   = " << saida << endl;
+        qtds[lsamples[i]]++;
+        if (lsamples[i] == saida)
         {
             hits++;
+            vetHits[saida]++;
         }
     }
-    cout << "Taxa de acerto = " << (hits/1000.0)*100 << endl;
-
+    cout << "Taxa de acerto = " << (hits/5000.0)*100 << "%" << endl;
+    cout << "Taxa de acerto de cada digito: " << endl;
+    for(int i=0; i<10; i++){
+        cout << "Digito " << i << ": " << (float(vetHits[i])/qtds[i])*100 << "%" << endl;
+    }
+    
     return 0;
 }

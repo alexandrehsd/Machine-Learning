@@ -1,1 +1,2 @@
-Repositório para algoritmos envolvendo técnicas de Machine Learning
+<h2>Handwritten digits Classifier</h2>
+
